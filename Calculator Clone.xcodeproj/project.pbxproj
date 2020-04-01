@@ -15,7 +15,6 @@
 		2A232CC72433849E00245BD9 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 2A232CC52433849E00245BD9 /* LaunchScreen.storyboard */; };
 		2A232CD22433849E00245BD9 /* Calculator_CloneTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A232CD12433849E00245BD9 /* Calculator_CloneTests.swift */; };
 		2A232CDD2433849E00245BD9 /* Calculator_CloneUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A232CDC2433849E00245BD9 /* Calculator_CloneUITests.swift */; };
-		2A232CEB2434E49F00245BD9 /* README.TXT in Resources */ = {isa = PBXBuildFile; fileRef = 2A232CEA2434E49F00245BD9 /* README.TXT */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -50,7 +49,6 @@
 		2A232CD82433849E00245BD9 /* Calculator CloneUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Calculator CloneUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		2A232CDC2433849E00245BD9 /* Calculator_CloneUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Calculator_CloneUITests.swift; sourceTree = "<group>"; };
 		2A232CDE2433849E00245BD9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		2A232CEA2434E49F00245BD9 /* README.TXT */ = {isa = PBXFileReference; lastKnownFileType = text; path = README.TXT; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -108,7 +106,6 @@
 				2A232CC32433849E00245BD9 /* Assets.xcassets */,
 				2A232CC52433849E00245BD9 /* LaunchScreen.storyboard */,
 				2A232CC82433849E00245BD9 /* Info.plist */,
-				2A232CEA2434E49F00245BD9 /* README.TXT */,
 			);
 			path = "Calculator Clone";
 			sourceTree = "<group>";
@@ -237,7 +234,6 @@
 			files = (
 				2A232CC72433849E00245BD9 /* LaunchScreen.storyboard in Resources */,
 				2A232CC42433849E00245BD9 /* Assets.xcassets in Resources */,
-				2A232CEB2434E49F00245BD9 /* README.TXT in Resources */,
 				2A232CC22433849C00245BD9 /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
