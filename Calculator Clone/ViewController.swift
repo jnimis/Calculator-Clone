@@ -27,9 +27,10 @@ class ViewController: UIViewController {
   
   var pendingFunction : MathFunction = .None
   var firstValue = Decimal.zero
+  var displayValue = Decimal.zero
   var hasActiveAction = false
-  var isDisplayingCalculatedResult = false
   var digitShouldResetDisplay = false
+  var showTrailingDecimal = false
   
   let PADDING : CGFloat = 8
   let ROW_PADDING : CGFloat = 8
@@ -37,6 +38,11 @@ class ViewController: UIViewController {
   var TEXT_HEIGHT : CGFloat = 90
   var BUTTON_FONT_SIZE : CGFloat = 36
   var IMAGE_SIZE : CGFloat = 14
+  
+  let ORANGE_COLOR = UIColor.init(red: 1.0, green: 159/255, blue: 10/255, alpha: 1.0)
+  let DARK_GRAY_COLOR = UIColor.init(red: 51 / 255, green: 51 / 255, blue: 51 / 255, alpha: 1.0)
+  let LIGHT_GRAY_COLOR = UIColor.init(red: 166 / 255, green: 166 / 255, blue: 166 / 255, alpha: 1.0)
+  let ANIMATION_DURATION = 0.3
   
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -49,13 +55,14 @@ class ViewController: UIViewController {
     addTextDisplay()
   
     buildCalculator()
+  
   }
   
   // MARK: - UI setup
   
   func addAndFormatFunctionButton(_ b : UIButton) {
     self.view.addSubview(b)
-    b.backgroundColor = UIColor.orange
+    b.backgroundColor = ORANGE_COLOR
     b.tintColor = UIColor.white
   }
   
@@ -63,7 +70,7 @@ class ViewController: UIViewController {
     let b = buttonWithText(text: digit)
     b.addTarget(self, action: Selector(("digitAction:")), for: .touchUpInside)
     self.view.addSubview(b)
-    b.backgroundColor = UIColor.darkGray // 505050 == UIColor.init(red: 80/255, green: 80/255, blue: 80/255, alpha: 1.0)
+    b.backgroundColor = DARK_GRAY_COLOR
     b.tintColor = UIColor.white
     return b
   }
@@ -141,7 +148,7 @@ class ViewController: UIViewController {
     v.translatesAutoresizingMaskIntoConstraints = false
     v.layer.masksToBounds = true
     let screenWidth = self.view.frame.width
-    let buttonWidth = (screenWidth - (PADDING * 5)) / 4
+    let buttonWidth : CGFloat = (screenWidth - (PADDING * 5)) / 4
     v.layer.cornerRadius = buttonWidth / 2
   }
   
@@ -153,7 +160,7 @@ class ViewController: UIViewController {
     clearButton = buttonWithText(text: "AC")
     clearButton.addTarget(self, action: Selector(("clearAction:")), for: .touchUpInside)
     self.view.addSubview(clearButton)
-    clearButton.backgroundColor = UIColor.gray
+    clearButton.backgroundColor = LIGHT_GRAY_COLOR
     clearButton.tintColor = UIColor.black
     self.view.addConstraint(NSLayoutConstraint.init(item: clearButton,
                                                     attribute: .top,
@@ -166,19 +173,19 @@ class ViewController: UIViewController {
     let signButton = buttonWithImage(imageName: "plus.slash.minus")
     signButton.addTarget(self, action: Selector(("changeSignAction:")), for: .touchUpInside)
     self.view.addSubview(signButton)
-    signButton.backgroundColor = UIColor.gray
+    signButton.backgroundColor = LIGHT_GRAY_COLOR
     signButton.tintColor = UIColor.black
 
     let pctButton = buttonWithImage(imageName: "percent")
     pctButton.addTarget(self, action: Selector(("percentAction:")), for: .touchUpInside)
     self.view.addSubview(pctButton)
-    pctButton.backgroundColor = UIColor.gray
+    pctButton.backgroundColor = LIGHT_GRAY_COLOR
     pctButton.tintColor = UIColor.black
 
     divideButton = buttonWithImage(imageName: "divide")
     divideButton.addTarget(self, action: Selector(("divideAction:")), for: .touchUpInside)
     self.view.addSubview(divideButton)
-    divideButton.backgroundColor = UIColor.orange
+    divideButton.backgroundColor = ORANGE_COLOR
     divideButton.tintColor = UIColor.white
     
     self.view.addConstraints(horizontalConstraint(views: [clearButton, signButton, pctButton, divideButton]))
@@ -192,7 +199,7 @@ class ViewController: UIViewController {
     multiplyButton = buttonWithImage(imageName: "multiply")
     multiplyButton.addTarget(self, action: Selector(("multiplyAction:")), for: .touchUpInside)
     self.view.addSubview(multiplyButton)
-    multiplyButton.backgroundColor = UIColor.orange
+    multiplyButton.backgroundColor = ORANGE_COLOR
     multiplyButton.tintColor = UIColor.white
     
     self.view.addConstraints(horizontalConstraint(views: [sevenButton, eightButton, nineButton, multiplyButton]))
@@ -213,7 +220,7 @@ class ViewController: UIViewController {
     subtractButton = buttonWithImage(imageName: "minus")
     subtractButton.addTarget(self, action: Selector(("subtractAction:")), for: .touchUpInside)
     self.view.addSubview(subtractButton)
-    subtractButton.backgroundColor = UIColor.orange
+    subtractButton.backgroundColor = ORANGE_COLOR
     subtractButton.tintColor = UIColor.white
     
     self.view.addConstraints(horizontalConstraint(views: [four, five, six, subtractButton]))
@@ -384,18 +391,53 @@ class ViewController: UIViewController {
   
   // MARK: - helpers
   
+  func getNumberFormatter() -> NumberFormatter {
+    let nf = NumberFormatter()
+    nf.usesGroupingSeparator = true
+    nf.numberStyle = .decimal
+    nf.maximumSignificantDigits = displayValue < 1 ? 8 : 9
+    nf.maximumFractionDigits = 8
+    if displayValue > 999999999 {
+      nf.numberStyle = .scientific
+      nf.exponentSymbol = "e"
+      nf.maximumSignificantDigits = 6
+    }
+    return nf
+  }
+  
   func updateDisplay() {
-    if textDisplay.text == "0" {
+    
+    if displayValue == 0 {
       clearButton.setTitle("AC", for: .normal)
+      return
     } else {
       clearButton.setTitle("C", for: .normal)
     }
     
-    // adjust font size of text window
+    let nf = getNumberFormatter()
+    let displayDouble = NSDecimalNumber.init(decimal: displayValue).doubleValue
+    let valNumber = NSNumber.init(value: displayDouble)
+    if var text = nf.string(from: valNumber) {
+      if showTrailingDecimal {
+        text = "\(text)."
+      }
+      textDisplay.text = text
+    }
+  }
+  
+  func updateDisplayOld() {
+    
+    if textDisplay.text == "0" || textDisplay.text == "-0" {
+      clearButton.setTitle("AC", for: .normal)
+      return
+    } else {
+      clearButton.setTitle("C", for: .normal)
+    }
+    
     var formattedText = "0"
-    let nf = NumberFormatter()
-    nf.usesGroupingSeparator = true
-    nf.numberStyle = .decimal
+    
+    let nf = getNumberFormatter()
+    
     let endsInDecimal = textDisplay.text != nil && textDisplay.text!.suffix(1) == "."
     if let t = textDisplay.text, let num = nf.number(from: t.replacingOccurrences(of: ",", with: "")) {
       if let text = nf.string(from: num) {
@@ -409,7 +451,15 @@ class ViewController: UIViewController {
   }
   
   func numberFromTextField() -> Decimal {
-    if let t = textDisplay.text, let val = Decimal(string: t.replacingOccurrences(of: ",", with: "")) {
+    if let t = textDisplay.text {
+      return numberFromString(t)
+    }
+    return Decimal.zero
+  }
+  
+  func numberFromString(_ t : String) -> Decimal {
+    if let val = Decimal(string: t.replacingOccurrences(of: ",", with: "")) {
+      displayValue = val
       return val
     }
     return Decimal.zero
@@ -419,17 +469,54 @@ class ViewController: UIViewController {
     let actionButtons = [additionButton, subtractButton, multiplyButton, divideButton]
     for b in actionButtons {
       if b != selectedButton {
-        b.backgroundColor = UIColor.orange
-        b.tintColor = UIColor.white
+        animatedDeselect(b)
       }
     }
+  }
+  
+  func animatedDeselect(_ button : UIButton) {
+    guard let ti = TimeInterval.init(exactly: ANIMATION_DURATION) else {
+      button.backgroundColor = ORANGE_COLOR
+      button.tintColor = UIColor.white
+      return
+    }
+    UIView.transition(with: button,
+                      duration: ti,
+                      options: .curveLinear,
+                      animations: {
+                        button.backgroundColor = self.ORANGE_COLOR
+                        button.tintColor = UIColor.white
+    }, completion: nil)
+  }
+  
+  func animatedSelect(_ button : UIButton, isDigit : Bool) {
+    let bgColor = isDigit ? DARK_GRAY_COLOR : UIColor.white
+    if isDigit {
+      button.backgroundColor = UIColor.gray
+    }
+    guard let ti = TimeInterval.init(exactly: ANIMATION_DURATION) else {
+      button.backgroundColor = bgColor
+      if !isDigit {
+        button.tintColor = ORANGE_COLOR
+      }
+      return
+    }
+    UIView.transition(with: button,
+                      duration: ti,
+                      options: .curveLinear,
+                      animations: {
+                        button.backgroundColor = bgColor
+                        if !isDigit {
+                          button.tintColor = self.ORANGE_COLOR
+                        }
+    }, completion: nil)
   }
   
   // MARK: - actions
   
   @objc func equalsAction(_ sender : UIButton) {
     
-    let secondValue = numberFromTextField()
+    let secondValue = displayValue
     var result = Decimal.zero
     switch pendingFunction {
     case .Add:
@@ -445,29 +532,87 @@ class ViewController: UIViewController {
       result = firstValue / secondValue
       break
     case .None:
-      break
+      unselectActionButtonsExcept(nil)
+      return
     }
     
     textDisplay.text = "\(result)"
+    displayValue = result
+
     unselectActionButtonsExcept(nil)
     hasActiveAction = false
     pendingFunction = .None
-    isDisplayingCalculatedResult = true
+    digitShouldResetDisplay = true
     
     updateDisplay()
   }
   
   @objc func digitAction(_ sender : UIButton) {
+    
+    guard let digit = sender.titleLabel?.text else {
+      print("ERROR: no digit to add to text, in digitAction")
+      return
+    }
+    
+    // check for decimal point "digit"
+    // convert current value to string
+    var numString = "\(displayValue)"
+
+    if digit == "." {
+      // can't add a second decimal point
+      if numString.contains(".") {
+        return
+      } else {
+        showTrailingDecimal = true
+        updateDisplay()
+        return
+      }
+    }
+    
+    guard let v = Decimal.init(string: digit) else {
+      print("ERROR: received digit that couldn't be parsed to decimal")
+      return
+    }
+    
+    // simplest case
+    if digitShouldResetDisplay || displayValue == 0 {
+      displayValue = v
+      textDisplay.text = digit
+    } else {
+      // otherwise add the digit to the end
+      if numString.contains(".") || showTrailingDecimal {
+        if numString.length > 9 {
+          return
+        }
+        numString = showTrailingDecimal ? "\(numString).\(digit)" : "\(numString)\(digit)"
+        displayValue = numberFromString(numString)
+        showTrailingDecimal = false
+      } else {
+        if numString.length > 8 {
+          return
+        }
+        displayValue = (displayValue * 10) + v
+      }
+    }
+    
+    digitShouldResetDisplay = false
+    updateDisplay()
+    
+  }
+  
+  @objc func digitActionOld(_ sender : UIButton) {
+//    animatedSelect(sender, isDigit: true)   // this ended up blocking the UI - there must be another way to apply custom button animations...
     guard let digit = sender.titleLabel?.text else {
       print("OOPS no digit to add to text, in digitAction")
       return
     }
     if let t = textDisplay.text {
-      if t.replacingOccurrences(of: ",", with: "").length > 8 {
+      if !digitShouldResetDisplay && t.replacingOccurrences(of: ",", with: "").replacingOccurrences(of: ".", with: "").length > 8 {
         return
       }
-      if digitShouldResetDisplay || isDisplayingCalculatedResult || (t == "0" && digit != ".") {
+      if digitShouldResetDisplay || (t == "0" && digit != ".") {
         textDisplay.text = digit
+        unselectActionButtonsExcept(nil)
       } else {
         textDisplay.text?.append(digit)
       }
@@ -476,24 +621,28 @@ class ViewController: UIViewController {
       textDisplay.text = digit
     }
     digitShouldResetDisplay = false
-    isDisplayingCalculatedResult = false
     updateDisplay()
   }
   
   @objc func clearAction(_ sender : UIButton) {
     textDisplay.text = "0"
+    displayValue = 0
+    
     // all clear action
     if hasActiveAction && sender.title(for: .normal) == "AC" {
       unselectActionButtonsExcept(nil)
       hasActiveAction = false
       pendingFunction = .None
       firstValue = Decimal.zero
+    } else if !hasActiveAction {
+      clearButton.setTitle("AC", for: .normal)
     }
-    isDisplayingCalculatedResult = false
-    updateDisplay()
+    
+    digitShouldResetDisplay = false
   }
   
   @objc func changeSignAction(_ sender : UIButton) {
+    displayValue = 0 - displayValue
     if let currentText = textDisplay.text {
       if currentText[0] == "-" {
         textDisplay.text = currentText.substring(fromIndex: 1)
@@ -501,52 +650,46 @@ class ViewController: UIViewController {
         textDisplay.text = "-\(currentText)"
       }
     }
-    updateDisplay()
   }
   
   @objc func percentAction(_ sender : UIButton) {
-    let number = numberFromTextField()
-    let numberNew = number / 100
-    textDisplay.text = "\(numberNew)"
+    displayValue = displayValue / 100
+//    textDisplay.text = "\(numberNew)"
     updateDisplay()
   }
   
   @objc func divideAction(_ sender : UIButton) {
-    divideButton.backgroundColor = UIColor.white
-    divideButton.tintColor = UIColor.orange
+    animatedSelect(sender, isDigit: false)
     unselectActionButtonsExcept(sender)
     pendingFunction = .Divide
-    firstValue = numberFromTextField()
+    firstValue = displayValue
     hasActiveAction = true
     digitShouldResetDisplay = true
   }
   
   @objc func multiplyAction(_ sender : UIButton) {
-    multiplyButton.backgroundColor = UIColor.white
-    multiplyButton.tintColor = UIColor.orange
+    animatedSelect(sender, isDigit: false)
     unselectActionButtonsExcept(sender)
     pendingFunction = .Multiply
-    firstValue = numberFromTextField()
+    firstValue = displayValue
     hasActiveAction = true
     digitShouldResetDisplay = true
   }
 
   @objc func subtractAction(_ sender : UIButton) {
-    subtractButton.backgroundColor = UIColor.white
-    subtractButton.tintColor = UIColor.orange
+    animatedSelect(sender, isDigit: false)
     unselectActionButtonsExcept(sender)
     pendingFunction = .Subtract
-    firstValue = numberFromTextField()
+    firstValue = displayValue
     hasActiveAction = true
     digitShouldResetDisplay = true
   }
   
   @objc func additionAction(_ sender : UIButton) {
-    additionButton.backgroundColor = UIColor.white
-    additionButton.tintColor = UIColor.orange
+    animatedSelect(sender, isDigit: false)
     unselectActionButtonsExcept(sender)
     pendingFunction = .Add
-    firstValue = numberFromTextField()
+    firstValue = displayValue
     hasActiveAction = true
     digitShouldResetDisplay = true
   }
@@ -554,7 +697,7 @@ class ViewController: UIViewController {
 }
 
 // https://stackoverflow.com/questions/24092884/get-nth-character-of-a-string-in-swift-programming-language/38215613#38215613
-// why doesn't Apple make up their mind about strings?!
+// why doesn't Apple make up their mind about substrings?!
 extension String {
 
     var length: Int {
